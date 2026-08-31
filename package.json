@@ -1,0 +1,14 @@
+{
+  "name": "komik-reader-app",
+  "version": "1.0.0",
+  "description": "Aplikasi Web Baca Manga / Manhwa / Manhua Subtitle Indonesia",
+  "scripts": {
+    "build:prod": "npm --prefix server install && npm --prefix client install && npm --prefix client run build",
+    "start": "node server/src/index.js",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
