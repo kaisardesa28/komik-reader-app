@@ -27,7 +27,7 @@ const fetchHtml = async (url) => {
 
 export const extractSlug = (url = '') => {
   if (!url) return '';
-  const cleaned = url.replace(KOMIKINDO_BASE, '').replace(KOMIKU_BASE, '').replace(/\/+$/, '');
+  const cleaned = url.replace(KOMIKINDO_BASE, '').replace(KOMIKU_BASE, '').replace('https://api.komiku.org', '').replace(/\/+$/, '');
   const parts = cleaned.split('/').filter(Boolean);
   if (parts.length === 0) return '';
   if (parts[0] === 'manga' || parts[0] === 'komik') return parts[1] || parts[0];
@@ -35,7 +35,7 @@ export const extractSlug = (url = '') => {
 };
 
 // ==========================================
-// 1. KOMIKU SCRAPING (Primary & Resilient)
+// 1. KOMIKU SCRAPING FUNCTIONS
 // ==========================================
 
 const getHomeFromKomiku = async () => {
@@ -113,49 +113,57 @@ const getHomeFromKomiku = async () => {
   };
 };
 
-const getComicsFromKomiku = async ({ type = 'all', page = 1, sort = 'latest' } = {}) => {
-  let url = `${KOMIKU_BASE}/pustaka/`;
-  if (type === 'manhwa') url += '?tipe=manhwa';
-  else if (type === 'manhua') url += '?tipe=manhua';
-  else if (type === 'manga') url += '?tipe=manga';
-  else if (sort === 'popular') url += '?orderby=popularity';
-  else url += '?orderby=date';
+const getComicsFromKomiku = async ({ type = 'all', status = 'all', genre = 'all', sort = 'latest', page = 1 } = {}) => {
+  const p = parseInt(page, 10) || 1;
+  let url = p > 1 ? `https://api.komiku.org/manga/page/${p}/?` : `https://api.komiku.org/manga/?`;
 
-  if (page > 1) {
-    url += `&page=${page}`;
+  const queryParams = [];
+  if (type && type !== 'all') queryParams.push(`tipe=${encodeURIComponent(type)}`);
+  if (status && status !== 'all') {
+    const s = (status === 'tamat' || status === 'end' || status === 'completed') ? 'end' : 'ongoing';
+    queryParams.push(`status=${s}`);
   }
+  if (genre && genre !== 'all') queryParams.push(`genre=${encodeURIComponent(genre)}`);
+  
+  if (sort === 'popular') queryParams.push('orderby=popularity');
+  else if (sort === 'earliest') queryParams.push('orderby=earliest');
+  else queryParams.push('orderby=date');
+
+  url += queryParams.join('&');
 
   const html = await fetchHtml(url);
   const $ = cheerio.load(html);
 
   const comics = [];
-  $('.bge, .ls4, .ls2, .list-manga article').each((_, el) => {
+  $('.bge, .ls4, .ls2').each((_, el) => {
     const a = $(el).find('h3 a, h4 a, a').first();
     const img = $(el).find('img').first();
     const rawHref = a.attr('href') || '';
     const slug = extractSlug(rawHref);
     const title = $(el).find('h3, h4').first().text().trim() || a.text().trim();
     const thumbnail = img.attr('data-src') || img.attr('src') || '';
-    const lsch = $(el).find('.ls24, .tpe1_inf, .kan').first().text().trim();
+    const desc = $(el).find('p, .ls24, .tpe1_inf').first().text().trim();
 
     if (slug && title) {
-      const cType = type !== 'all' ? (type.charAt(0).toUpperCase() + type.slice(1)) : (/manhwa/i.test(slug) ? 'Manhwa' : /manhua/i.test(slug) ? 'Manhua' : 'Manga');
+      const cType = type !== 'all' ? (type.charAt(0).toUpperCase() + type.slice(1)) : (/manhwa/i.test(slug + ' ' + title) ? 'Manhwa' : /manhua/i.test(slug + ' ' + title) ? 'Manhua' : 'Manga');
       comics.push({
         title,
         slug,
         thumbnail,
         type: cType,
         score: '8.7',
-        latestChapter: lsch ? lsch.slice(0, 20) : 'Ch. Baru',
+        latestChapter: desc ? desc.slice(0, 30) : 'Ch. Baru',
         chapterSlug: slug,
-        updatedOn: 'Baru'
+        status: (status === 'end' || status === 'tamat') ? 'Tamat' : 'Ongoing',
+        updatedOn: 'Update'
       });
     }
   });
 
   return {
-    currentPage: parseInt(page, 10) || 1,
-    hasNextPage: comics.length >= 10,
+    currentPage: p,
+    hasNextPage: comics.length >= 8,
+    totalCount: comics.length,
     comics
   };
 };
@@ -314,7 +322,7 @@ const getChapterImagesFromKomiku = async (slug) => {
 };
 
 // ==========================================
-// 2. EXPORT FUNCTIONS
+// 2. EXPORTS
 // ==========================================
 
 export const getHome = async () => {

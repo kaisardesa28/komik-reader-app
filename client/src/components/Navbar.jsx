@@ -10,7 +10,9 @@ import {
   Home, 
   Layers,
   Menu,
-  X
+  X,
+  CheckCircle2,
+  PlayCircle
 } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
 
@@ -34,6 +36,7 @@ const Navbar = () => {
     { to: '/browse?type=manhwa', label: 'Manhwa', badge: 'Hot' },
     { to: '/browse?type=manhua', label: 'Manhua' },
     { to: '/browse?type=manga', label: 'Manga' },
+    { to: '/browse?status=tamat', label: 'Tamat', icon: CheckCircle2, badge: 'End' },
     { to: '/browse?sort=popular', label: 'Populer', icon: Flame },
     { to: '/koleksi', label: 'Koleksi', icon: Bookmark, badgeCount: bookmarks.length },
   ];
@@ -77,7 +80,11 @@ const Navbar = () => {
                   {link.icon && <link.icon className="w-4 h-4" />}
                   <span>{link.label}</span>
                   {link.badge && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                    <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full border ${
+                      link.badge === 'End'
+                        ? 'bg-sky-500/20 text-sky-400 border-sky-500/30'
+                        : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                    }`}>
                       {link.badge}
                     </span>
                   )}

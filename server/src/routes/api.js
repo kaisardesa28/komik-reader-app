@@ -14,7 +14,7 @@ const router = Router();
 // GET /api/home (Hero banner, popular, latest updates)
 router.get('/home', async (req, res) => {
   try {
-    const data = await getOrSetCache('home_data', () => getHome(), 300); // 5 mins cache
+    const data = await getOrSetCache('home_data_v2', () => getHome(), 300); // 5 mins cache
     res.json({ success: true, data });
   } catch (error) {
     console.error('Error in /api/home:', error.message);
@@ -22,12 +22,19 @@ router.get('/home', async (req, res) => {
   }
 });
 
-// GET /api/comics?type=manga|manhwa|manhua|all&page=1&sort=latest|popular
+// GET /api/comics?type=manga|manhwa|manhua|all&status=all|ongoing|end|tamat&genre=action|...&sort=latest|popular&page=1
 router.get('/comics', async (req, res) => {
   try {
-    const { type = 'all', page = 1, sort = 'latest' } = req.query;
-    const cacheKey = `comics_${type}_${page}_${sort}`;
-    const data = await getOrSetCache(cacheKey, () => getComics({ type, page, sort }), 300);
+    const { 
+      type = 'all', 
+      status = 'all', 
+      genre = 'all', 
+      sort = 'latest', 
+      page = 1 
+    } = req.query;
+
+    const cacheKey = `comics_v2_${type}_${status}_${genre}_${sort}_${page}`;
+    const data = await getOrSetCache(cacheKey, () => getComics({ type, status, genre, sort, page }), 300);
     res.json({ success: true, data });
   } catch (error) {
     console.error('Error in /api/comics:', error.message);
@@ -55,7 +62,7 @@ router.get('/search', async (req, res) => {
 router.get('/comic/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
-    const cacheKey = `comic_detail_${slug}`;
+    const cacheKey = `comic_detail_v2_${slug}`;
     const data = await getOrSetCache(cacheKey, () => getComicDetail(slug), 600);
     res.json({ success: true, data });
   } catch (error) {
@@ -68,7 +75,7 @@ router.get('/comic/:slug', async (req, res) => {
 router.get('/chapter/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
-    const cacheKey = `chapter_images_${slug}`;
+    const cacheKey = `chapter_images_v2_${slug}`;
     const data = await getOrSetCache(cacheKey, () => getChapterImages(slug), 1800); // 30 mins cache
     res.json({ success: true, data });
   } catch (error) {
@@ -90,8 +97,8 @@ router.get('/proxy-image', async (req, res) => {
       responseType: 'arraybuffer',
       timeout: 10000,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Referer': 'https://komikindo.tv/',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Referer': 'https://komiku.org/',
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
       }
     });

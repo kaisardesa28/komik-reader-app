@@ -10,9 +10,9 @@ export const fetchHome = async () => {
   return res.data.data;
 };
 
-export const fetchComics = async ({ type = 'all', page = 1, sort = 'latest' } = {}) => {
+export const fetchComics = async ({ type = 'all', status = 'all', genre = 'all', sort = 'latest', page = 1 } = {}) => {
   const res = await api.get('/comics', {
-    params: { type, page, sort }
+    params: { type, status, genre, sort, page }
   });
   return res.data.data;
 };
