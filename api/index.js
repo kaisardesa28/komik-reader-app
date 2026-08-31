@@ -11,12 +11,13 @@ app.use(cors({
 
 app.use(express.json());
 
-// Mount API routes
-app.use('/api', apiRouter);
-
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), message: 'Komik Reader Vercel API is running' });
 });
+
+// Mount API routes on both /api and root / to support all Vercel rewrite patterns
+app.use('/api', apiRouter);
+app.use('/', apiRouter);
 
 export default app;
